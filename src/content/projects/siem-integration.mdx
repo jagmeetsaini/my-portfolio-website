@@ -1,0 +1,30 @@
+---
+title: "SIEM Integration"
+slug: "siem-integration"
+date: "2024-06"
+tags: ["REST APIs", "Splunk HEC", "Azure Sentinel", "QRadar"]
+featured: true
+order: 1
+summary: "Integrated Splunk, Sumo Logic, Sentinel & QRadar into a password-manager's audit pipeline. Standardized event schemas, validated log ingestion & alerting for compliance."
+---
+
+## Overview
+
+Integrated four SIEM platforms — Splunk, Sumo Logic, Microsoft Sentinel, and QRadar — into Enpass's audit and compliance pipeline.
+
+## Problem
+
+Enpass needed to support enterprise customers who required their security events to flow into their own SIEM tooling. Each platform had different ingestion APIs, event schemas, and authentication mechanisms.
+
+## What I Built
+
+- Standardized internal audit event schema that maps cleanly to all four platforms
+- Splunk HEC connector with batching and retry logic
+- Azure Sentinel Log Analytics workspace integration via Data Collector API
+- QRadar Universal DSM integration
+- Automated validation suite that replays test events and verifies ingestion + alerting
+
+## Impact
+
+- Unblocked 3 enterprise deals that required SIEM integration as a security prerequisite
+- Reduced integration time for new SIEM platforms from weeks to days

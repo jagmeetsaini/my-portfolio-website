@@ -1,0 +1,30 @@
+---
+title: "S3 Data Dump Pipeline"
+slug: "s3-pipeline"
+date: "2023-09"
+tags: ["ECS", "Lambda", "KMS", "Python", "React"]
+featured: true
+order: 3
+summary: "Extract, encrypt & relocate customer data with an automated, compliance-friendly pipeline. Zero-touch operations after handoff."
+---
+
+## Overview
+
+Built a self-service pipeline that lets LeadSquared's ops team extract, encrypt, and deliver a customer's full data archive to an isolated S3 bucket — meeting GDPR and contractual data portability requirements.
+
+## Problem
+
+Customer data extraction was a manual, engineer-led process taking 2–3 days. It had no audit trail, no encryption guarantee, and no way for ops to run it without engineering involvement.
+
+## What I Built
+
+- Python ECS Fargate task that queries DynamoDB + S3, packages data, encrypts with customer-specific KMS key
+- Lambda orchestrator triggered via internal React UI — ops team runs it without engineering
+- Secure pre-signed S3 URL delivery with 24-hour expiry
+- Full audit trail in CloudTrail + DynamoDB log table
+
+## Impact
+
+- Data extraction time: 2–3 days → under 1 hour (10× faster)
+- Zero engineering involvement after initial handoff
+- Full audit trail for compliance reviews

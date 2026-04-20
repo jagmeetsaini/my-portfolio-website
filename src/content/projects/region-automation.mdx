@@ -1,0 +1,30 @@
+---
+title: "New Region Setup Automation"
+slug: "region-automation"
+date: "2023-03"
+tags: ["Terraform", "AWS", "PowerShell", "CloudFormation"]
+featured: true
+order: 2
+summary: "Terraform + scripts that stamp out full AWS region infra in minutes instead of weeks. Zero-drift configuration across regions & accounts."
+---
+
+## Overview
+
+Automated the full provisioning of a new AWS region for LeadSquared's multi-tenant SaaS platform — cutting setup time from 2–3 weeks to under 30 minutes.
+
+## Problem
+
+Each new customer region required manually provisioning 40+ AWS resources across VPC, EC2, RDS, S3, IAM, and DNS. This was error-prone, slow, and produced configuration drift between regions.
+
+## What I Built
+
+- Terraform modules for each resource layer: networking, compute, storage, IAM, DNS
+- PowerShell orchestration scripts to sequence and parameterize Terraform runs
+- CloudFormation stack for bootstrapping Terraform state backend per region
+- Drift detection pipeline using AWS Config rules
+
+## Impact
+
+- Region provisioning: 2–3 weeks → under 30 minutes (35× speedup)
+- Zero configuration drift incidents after rollout
+- New engineers could provision a region with a single command
