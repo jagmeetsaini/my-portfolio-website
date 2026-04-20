@@ -1,0 +1,72 @@
+name: Deploy to S3
+
+on:
+  push:
+    branches:
+      - main         # production deploy
+      - development  # staging deploy
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # ── Production (main → prod S3 bucket + CloudFront invalidation) ──
+      - name: Deploy to Production S3
+        if: github.ref == 'refs/heads/main'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ secrets.AWS_REGION }}
+
+      - name: Sync to Production bucket
+        if: github.ref == 'refs/heads/main'
+        run: |
+          aws s3 sync out/ s3://${{ secrets.S3_BUCKET_PROD }} \
+            --delete \
+            --cache-control "public,max-age=31536000,immutable" \
+            --exclude "*.html" \
+            --exclude "*.json"
+          aws s3 sync out/ s3://${{ secrets.S3_BUCKET_PROD }} \
+            --delete \
+            --cache-control "public,max-age=0,must-revalidate" \
+            --include "*.html" \
+            --include "*.json"
+
+      - name: Invalidate CloudFront (Production)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
+      # ── Staging (development → staging S3 bucket) ──
+      - name: Deploy to Staging S3
+        if: github.ref == 'refs/heads/development'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ secrets.AWS_REGION }}
+
+      - name: Sync to Staging bucket
+        if: github.ref == 'refs/heads/development'
+        run: |
+          aws s3 sync out/ s3://${{ secrets.S3_BUCKET_STAGING }} --delete
