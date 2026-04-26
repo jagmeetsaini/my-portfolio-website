@@ -8,6 +8,9 @@ export type SkillNode = { name: string; category: string }
 interface Props {
   nodes: SkillNode[]
   onHover: (node: SkillNode | null) => void
+  onNodeClick: (node: SkillNode | null) => void
+  selectedNode: SkillNode | null
+  selectedCategory: string | null
 }
 
 function fibonacciSphere(n: number, radius: number): THREE.Vector3[] {
@@ -22,12 +25,21 @@ function fibonacciSphere(n: number, radius: number): THREE.Vector3[] {
   })
 }
 
-export default function SkillSphere({ nodes, onHover }: Props) {
+export default function SkillSphere({ nodes, onHover, onNodeClick, selectedNode, selectedCategory }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const labelsContainerRef = useRef<HTMLDivElement>(null)
+  const labelEls = useRef<(HTMLSpanElement | null)[]>([])
+
   const onHoverRef = useRef(onHover)
+  const onClickRef = useRef(onNodeClick)
+  const selectedNodeRef = useRef(selectedNode)
+  const selectedCategoryRef = useRef(selectedCategory)
 
   useEffect(() => { onHoverRef.current = onHover }, [onHover])
+  useEffect(() => { onClickRef.current = onNodeClick }, [onNodeClick])
+  useEffect(() => { selectedNodeRef.current = selectedNode }, [selectedNode])
+  useEffect(() => { selectedCategoryRef.current = selectedCategory }, [selectedCategory])
 
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return
@@ -36,18 +48,12 @@ export default function SkillSphere({ nodes, onHover }: Props) {
 
     const isDark = () => document.documentElement.classList.contains('dark')
     const defaultColor = () => isDark() ? 0x555555 : 0xc0c0c0
-    const hoveredColor = () => isDark() ? 0xf0f0f0 : 0x0a0a0a
-    const lineColorHex = () => isDark() ? 0x555555 : 0xc0c0c0
+    const activeColor = () => isDark() ? 0xf0f0f0 : 0x0a0a0a
+    const lineColorHex = () => isDark() ? 0x444444 : 0xd8d8d8
 
-    // Scene
     const scene = new THREE.Scene()
-    const camera = new THREE.PerspectiveCamera(
-      60,
-      container.clientWidth / container.clientHeight,
-      0.1,
-      1000
-    )
-    camera.position.z = 350
+    const camera = new THREE.PerspectiveCamera(55, container.clientWidth / container.clientHeight, 0.1, 1000)
+    camera.position.z = 300
 
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
     renderer.setClearColor(0x000000, 0)
@@ -57,9 +63,8 @@ export default function SkillSphere({ nodes, onHover }: Props) {
     const group = new THREE.Group()
     scene.add(group)
 
-    // Nodes
-    const positions = fibonacciSphere(nodes.length, 180)
-    const sharedGeo = new THREE.SphereGeometry(4, 8, 8)
+    const positions = fibonacciSphere(nodes.length, 155)
+    const sharedGeo = new THREE.SphereGeometry(5, 10, 10)
     const materials: THREE.MeshBasicMaterial[] = []
     const nodeMeshes: THREE.Mesh[] = []
 
@@ -79,7 +84,6 @@ export default function SkillSphere({ nodes, onHover }: Props) {
       if (!categoryMap.has(n.category)) categoryMap.set(n.category, [])
       categoryMap.get(n.category)!.push(i)
     })
-
     const lineObjects: THREE.LineSegments[] = []
     categoryMap.forEach((indices) => {
       if (indices.length < 2) return
@@ -90,34 +94,61 @@ export default function SkillSphere({ nodes, onHover }: Props) {
         }
       }
       const lineGeo = new THREE.BufferGeometry().setFromPoints(pts)
-      const lineMat = new THREE.LineBasicMaterial({
-        color: lineColorHex(),
-        transparent: true,
-        opacity: 0.12,
-      })
+      const lineMat = new THREE.LineBasicMaterial({ color: lineColorHex(), transparent: true, opacity: 0.15 })
       const ls = new THREE.LineSegments(lineGeo, lineMat)
       group.add(ls)
       lineObjects.push(ls)
     })
 
-    // Raycaster
-    const raycaster = new THREE.Raycaster()
-    const mouse = new THREE.Vector2(-9999, -9999)
-    let hoveredIndex = -1
+    // Pulse ring system
+    type PulseRing = { mesh: THREE.Mesh; mat: THREE.MeshBasicMaterial; t: number; posIdx: number }
+    let pulseRings: PulseRing[] = []
 
-    function updateColors() {
+    function spawnPulse(posIdx: number) {
+      const geo = new THREE.RingGeometry(6, 8, 32)
+      const mat = new THREE.MeshBasicMaterial({
+        color: activeColor(),
+        transparent: true,
+        opacity: 0.5,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      })
+      const mesh = new THREE.Mesh(geo, mat)
+      mesh.position.copy(positions[posIdx])
+      mesh.lookAt(positions[posIdx].clone().multiplyScalar(2))
+      group.add(mesh)
+      pulseRings.push({ mesh, mat, t: 0, posIdx })
+    }
+
+    function getActiveIndices(): number[] {
+      const selNode = selectedNodeRef.current
+      const selCat = selectedCategoryRef.current
+      if (selNode) {
+        const idx = nodes.findIndex(n => n.name === selNode.name)
+        return idx >= 0 ? [idx] : []
+      }
+      if (selCat) return nodes.map((n, i) => n.category === selCat ? i : -1).filter(i => i >= 0)
+      return []
+    }
+
+    function updateNodeColors(hovIdx: number) {
+      const activeIndices = getActiveIndices()
       materials.forEach((mat, i) => {
-        mat.color.setHex(i === hoveredIndex ? hoveredColor() : defaultColor())
+        mat.color.setHex(activeIndices.includes(i) || i === hovIdx ? activeColor() : defaultColor())
       })
     }
 
     // Interaction state
+    let hoveredIndex = -1
     let isDragging = false
-    let prevX = 0
-    let prevY = 0
+    let hasMoved = false
+    let prevX = 0, prevY = 0
+    const raycaster = new THREE.Raycaster()
+    const mouse = new THREE.Vector2(-9999, -9999)
 
     function onPointerDown(e: PointerEvent) {
       isDragging = true
+      hasMoved = false
       prevX = e.clientX
       prevY = e.clientY
     }
@@ -128,8 +159,10 @@ export default function SkillSphere({ nodes, onHover }: Props) {
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
 
       if (isDragging) {
-        group.rotation.y += (e.clientX - prevX) * 0.01
-        group.rotation.x += (e.clientY - prevY) * 0.01
+        const dx = e.clientX - prevX, dy = e.clientY - prevY
+        if (Math.abs(dx) > 2 || Math.abs(dy) > 2) hasMoved = true
+        group.rotation.y += dx * 0.008
+        group.rotation.x += dy * 0.008
         prevX = e.clientX
         prevY = e.clientY
         return
@@ -140,12 +173,22 @@ export default function SkillSphere({ nodes, onHover }: Props) {
       const newIdx = hits.length > 0 ? (hits[0].object.userData.index as number) : -1
       if (newIdx !== hoveredIndex) {
         hoveredIndex = newIdx
-        updateColors()
+        updateNodeColors(hoveredIndex)
         onHoverRef.current(newIdx >= 0 ? nodes[newIdx] : null)
       }
+      canvas.style.cursor = newIdx >= 0 ? 'pointer' : 'grab'
     }
 
     function onPointerUp() {
+      if (!hasMoved && isDragging) {
+        raycaster.setFromCamera(mouse, camera)
+        const hits = raycaster.intersectObjects(nodeMeshes)
+        if (hits.length > 0) {
+          onClickRef.current(nodes[hits[0].object.userData.index as number])
+        } else {
+          onClickRef.current(null)
+        }
+      }
       isDragging = false
     }
 
@@ -154,17 +197,17 @@ export default function SkillSphere({ nodes, onHover }: Props) {
       mouse.set(-9999, -9999)
       if (hoveredIndex !== -1) {
         hoveredIndex = -1
-        updateColors()
+        updateNodeColors(hoveredIndex)
         onHoverRef.current(null)
       }
+      canvas.style.cursor = 'grab'
     }
 
     function onWheel(e: WheelEvent) {
       const rect = canvas.getBoundingClientRect()
-      const inside =
-        e.clientX >= rect.left && e.clientX <= rect.right &&
-        e.clientY >= rect.top && e.clientY <= rect.bottom
-      if (inside) e.preventDefault()
+      if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+        e.preventDefault()
+      }
     }
 
     canvas.addEventListener('pointerdown', onPointerDown)
@@ -172,34 +215,87 @@ export default function SkillSphere({ nodes, onHover }: Props) {
     canvas.addEventListener('pointerleave', onPointerLeave)
     window.addEventListener('pointerup', onPointerUp)
     canvas.addEventListener('wheel', onWheel, { passive: false })
+    canvas.style.cursor = 'grab'
 
-    // Resize
     const ro = new ResizeObserver(() => {
-      const w = container.clientWidth
-      const h = container.clientHeight
-      if (w === 0 || h === 0) return
+      const w = container.clientWidth, h = container.clientHeight
+      if (!w || !h) return
       camera.aspect = w / h
       camera.updateProjectionMatrix()
       renderer.setSize(w, h)
     })
     ro.observe(container)
 
-    // Animation loop
+    const projVec = new THREE.Vector3()
     let rafId: number
+    let frameCount = 0
     let lastDark = isDark()
+    let lastActiveKey = ''
 
     function animate() {
       rafId = requestAnimationFrame(animate)
+      frameCount++
+
+      // Sync dark mode
       const nowDark = isDark()
       if (nowDark !== lastDark) {
         lastDark = nowDark
-        updateColors()
-        lineObjects.forEach(ls => {
-          ;(ls.material as THREE.LineBasicMaterial).color.setHex(lineColorHex())
-        })
+        updateNodeColors(hoveredIndex)
+        lineObjects.forEach(ls => (ls.material as THREE.LineBasicMaterial).color.setHex(lineColorHex()))
       }
+
+      // Sync selection state
+      const selNode = selectedNodeRef.current
+      const selCat = selectedCategoryRef.current
+      const activeKey = `${selNode?.name ?? ''}|${selCat ?? ''}`
+      if (activeKey !== lastActiveKey) {
+        lastActiveKey = activeKey
+        pulseRings.forEach(r => { group.remove(r.mesh); r.mesh.geometry.dispose(); r.mat.dispose() })
+        pulseRings = []
+        frameCount = 0
+        updateNodeColors(hoveredIndex)
+      }
+
+      // Spawn pulses for active nodes (staggered)
+      const activeIndices = getActiveIndices()
+      activeIndices.forEach((idx, j) => {
+        if ((frameCount + j * 22) % 70 === 0) spawnPulse(idx)
+      })
+
+      // Animate pulses
+      const alive: PulseRing[] = []
+      for (const ring of pulseRings) {
+        ring.t += 0.016
+        const s = 1 + ring.t * 5
+        ring.mesh.scale.set(s, s, s)
+        ring.mat.opacity = Math.max(0, 0.5 * (1 - ring.t))
+        if (ring.t < 1) { alive.push(ring) } else {
+          group.remove(ring.mesh)
+          ring.mesh.geometry.dispose()
+          ring.mat.dispose()
+        }
+      }
+      pulseRings = alive
+
       if (!isDragging) group.rotation.y += 0.003
+
       renderer.render(scene, camera)
+
+      // Update HTML label positions after render
+      const W = container.clientWidth
+      const H = container.clientHeight
+      nodeMeshes.forEach((mesh, i) => {
+        projVec.setFromMatrixPosition(mesh.matrixWorld)
+        projVec.project(camera)
+        const x = (projVec.x + 1) / 2 * W
+        const y = -(projVec.y - 1) / 2 * H
+        const opacity = Math.max(0, Math.min(1, (0.6 - projVec.z) * 2))
+        const el = labelEls.current[i]
+        if (el) {
+          el.style.transform = `translate(${x + 8}px, ${y - 5}px)`
+          el.style.opacity = String(opacity)
+        }
+      })
     }
     animate()
 
@@ -213,17 +309,27 @@ export default function SkillSphere({ nodes, onHover }: Props) {
       ro.disconnect()
       sharedGeo.dispose()
       materials.forEach(m => m.dispose())
-      lineObjects.forEach(ls => {
-        ls.geometry.dispose()
-        ;(ls.material as THREE.LineBasicMaterial).dispose()
-      })
+      lineObjects.forEach(ls => { ls.geometry.dispose(); (ls.material as THREE.LineBasicMaterial).dispose() })
+      pulseRings.forEach(r => { r.mesh.geometry.dispose(); r.mat.dispose() })
       renderer.dispose()
     }
   }, [nodes])
 
   return (
-    <div ref={containerRef} className="w-full h-[520px]">
-      <canvas ref={canvasRef} className="w-full h-full" />
+    <div ref={containerRef} className="relative w-full h-[580px]">
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+      <div ref={labelsContainerRef} className="absolute inset-0 pointer-events-none overflow-hidden">
+        {nodes.map((node, i) => (
+          <span
+            key={i}
+            ref={el => { labelEls.current[i] = el }}
+            className="absolute top-0 left-0 font-[var(--font-mono-loaded,var(--font-mono))] text-[10px] text-[var(--color-fg-muted)] whitespace-nowrap"
+            style={{ opacity: 0 }}
+          >
+            {node.name}
+          </span>
+        ))}
+      </div>
     </div>
   )
 }

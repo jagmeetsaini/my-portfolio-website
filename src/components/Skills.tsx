@@ -4,9 +4,8 @@ import SkillsViz from './SkillsViz'
 
 export default function Skills() {
   const totalCount = skillGroups.reduce((acc, g) => acc + g.pills.length, 0)
-  const nodes = skillGroups.flatMap(g =>
-    g.pills.map(name => ({ name, category: g.name }))
-  )
+  const nodes = skillGroups.flatMap(g => g.pills.map(name => ({ name, category: g.name })))
+  const categories = skillGroups.map(g => g.name)
 
   return (
     <section className="py-[clamp(100px,14vh,180px)]" id="skills">
@@ -29,7 +28,7 @@ export default function Skills() {
         </RevealOnScroll>
 
         <RevealOnScroll delay={80}>
-          <SkillsViz nodes={nodes} />
+          <SkillsViz nodes={nodes} categories={categories} />
         </RevealOnScroll>
       </div>
     </section>
