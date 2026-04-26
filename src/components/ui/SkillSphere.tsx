@@ -52,8 +52,9 @@ export default function SkillSphere({ nodes, onHover, onNodeClick, selectedNode,
     const lineColorHex = () => isDark() ? 0x444444 : 0xd8d8d8
 
     const scene = new THREE.Scene()
-    const camera = new THREE.PerspectiveCamera(55, container.clientWidth / container.clientHeight, 0.1, 1000)
-    camera.position.z = 300
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000)
+    camera.position.z = 420
+    camera.position.x = -50
 
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
     renderer.setClearColor(0x000000, 0)
@@ -63,8 +64,8 @@ export default function SkillSphere({ nodes, onHover, onNodeClick, selectedNode,
     const group = new THREE.Group()
     scene.add(group)
 
-    const positions = fibonacciSphere(nodes.length, 155)
-    const sharedGeo = new THREE.SphereGeometry(5, 10, 10)
+    const positions = fibonacciSphere(nodes.length, 110)
+    const sharedGeo = new THREE.SphereGeometry(3.5, 10, 10)
     const materials: THREE.MeshBasicMaterial[] = []
     const nodeMeshes: THREE.Mesh[] = []
 
@@ -100,24 +101,13 @@ export default function SkillSphere({ nodes, onHover, onNodeClick, selectedNode,
       lineObjects.push(ls)
     })
 
-    // Pulse ring system
-    type PulseRing = { mesh: THREE.Mesh; mat: THREE.MeshBasicMaterial; t: number; posIdx: number }
-    let pulseRings: PulseRing[] = []
-
-    function spawnPulse(posIdx: number) {
-      const geo = new THREE.RingGeometry(6, 8, 32)
-      const mat = new THREE.MeshBasicMaterial({
-        color: activeColor(),
-        transparent: true,
-        opacity: 0.5,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-      })
-      const mesh = new THREE.Mesh(geo, mat)
-      mesh.position.copy(positions[posIdx])
-      mesh.lookAt(positions[posIdx].clone().multiplyScalar(2))
-      group.add(mesh)
-      pulseRings.push({ mesh, mat, t: 0, posIdx })
+    // CSS 2D ripple system
+    function spawnCSSRipple(x: number, y: number) {
+      const el = document.createElement('div')
+      const color = isDark() ? '#f0f0f0' : '#0a0a0a'
+      el.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:12px;height:12px;border-radius:50%;border:1.5px solid ${color};pointer-events:none;animation:skill-ripple 0.85s ease-out forwards;`
+      labelsContainerRef.current?.appendChild(el)
+      setTimeout(() => el.remove(), 900)
     }
 
     function getActiveIndices(): number[] {
@@ -250,50 +240,32 @@ export default function SkillSphere({ nodes, onHover, onNodeClick, selectedNode,
       const activeKey = `${selNode?.name ?? ''}|${selCat ?? ''}`
       if (activeKey !== lastActiveKey) {
         lastActiveKey = activeKey
-        pulseRings.forEach(r => { group.remove(r.mesh); r.mesh.geometry.dispose(); r.mat.dispose() })
-        pulseRings = []
         frameCount = 0
         updateNodeColors(hoveredIndex)
       }
-
-      // Spawn pulses for active nodes (staggered)
-      const activeIndices = getActiveIndices()
-      activeIndices.forEach((idx, j) => {
-        if ((frameCount + j * 22) % 70 === 0) spawnPulse(idx)
-      })
-
-      // Animate pulses
-      const alive: PulseRing[] = []
-      for (const ring of pulseRings) {
-        ring.t += 0.016
-        const s = 1 + ring.t * 5
-        ring.mesh.scale.set(s, s, s)
-        ring.mat.opacity = Math.max(0, 0.5 * (1 - ring.t))
-        if (ring.t < 1) { alive.push(ring) } else {
-          group.remove(ring.mesh)
-          ring.mesh.geometry.dispose()
-          ring.mat.dispose()
-        }
-      }
-      pulseRings = alive
 
       if (!isDragging) group.rotation.y += 0.003
 
       renderer.render(scene, camera)
 
-      // Update HTML label positions after render
+      // Update HTML label positions + spawn CSS ripples for active nodes
       const W = container.clientWidth
       const H = container.clientHeight
+      const activeIndices = getActiveIndices()
       nodeMeshes.forEach((mesh, i) => {
         projVec.setFromMatrixPosition(mesh.matrixWorld)
         projVec.project(camera)
         const x = (projVec.x + 1) / 2 * W
         const y = -(projVec.y - 1) / 2 * H
-        const opacity = Math.max(0, Math.min(1, (0.6 - projVec.z) * 2))
+        const opacity = Math.max(0.15, Math.min(1, (0.9 - projVec.z) * 1.4))
         const el = labelEls.current[i]
         if (el) {
           el.style.transform = `translate(${x + 8}px, ${y - 5}px)`
           el.style.opacity = String(opacity)
+        }
+        // Spawn 2D CSS ripple for active nodes
+        if (activeIndices.includes(i) && (frameCount + i * 14) % 52 === 0) {
+          spawnCSSRipple(x, y)
         }
       })
     }
@@ -310,20 +282,19 @@ export default function SkillSphere({ nodes, onHover, onNodeClick, selectedNode,
       sharedGeo.dispose()
       materials.forEach(m => m.dispose())
       lineObjects.forEach(ls => { ls.geometry.dispose(); (ls.material as THREE.LineBasicMaterial).dispose() })
-      pulseRings.forEach(r => { r.mesh.geometry.dispose(); r.mat.dispose() })
       renderer.dispose()
     }
   }, [nodes])
 
   return (
-    <div ref={containerRef} className="relative w-full h-[580px]">
+    <div ref={containerRef} className="relative w-full h-full min-h-[460px] overflow-hidden">
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
       <div ref={labelsContainerRef} className="absolute inset-0 pointer-events-none overflow-hidden">
         {nodes.map((node, i) => (
           <span
             key={i}
             ref={el => { labelEls.current[i] = el }}
-            className="absolute top-0 left-0 font-[var(--font-mono-loaded,var(--font-mono))] text-[10px] text-[var(--color-fg-muted)] whitespace-nowrap"
+            className="absolute top-0 left-0 font-[var(--font-mono-loaded,var(--font-mono))] text-[11px] text-[var(--color-fg)] whitespace-nowrap"
             style={{ opacity: 0 }}
           >
             {node.name}

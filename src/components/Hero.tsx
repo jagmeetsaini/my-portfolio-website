@@ -1,23 +1,34 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useTheme } from 'next-themes'
 import { site } from '@/content/site'
 import MagneticButton from './ui/MagneticButton'
 import { DottedSurface } from './ui/dotted-surface'
 
 export default function Hero() {
   const typerRef = useRef<HTMLSpanElement>(null)
+  const { resolvedTheme } = useTheme()
+  const themeRef = useRef(resolvedTheme)
+
+  useEffect(() => {
+    themeRef.current = resolvedTheme
+  }, [resolvedTheme])
 
   useEffect(() => {
     const el = typerRef.current
     if (!el) return
     const roles = site.roles as readonly { word: string; color: string }[]
     let i = 0, j = 0, deleting = false
-    el.style.setProperty('--role-color', roles[0].color)
+
+    const getColor = (roleColor: string) =>
+      themeRef.current === 'dark' ? roleColor : 'var(--color-fg)'
+
+    el.style.setProperty('--role-color', getColor(roles[0].color))
 
     function tick() {
       const { word, color } = roles[i]
-      el!.style.setProperty('--role-color', color)
+      el!.style.setProperty('--role-color', getColor(color))
       if (!deleting) {
         j++
         el!.textContent = word.slice(0, j)
@@ -26,7 +37,7 @@ export default function Hero() {
       } else {
         j--
         // zero-width space keeps the span's line-height intact so layout never collapses
-        el!.textContent = j === 0 ? '\u200b' : word.slice(0, j)
+        el!.textContent = j === 0 ? '​' : word.slice(0, j)
         if (j === 0) { deleting = false; i = (i + 1) % roles.length; setTimeout(tick, 280); return }
         setTimeout(tick, 28)
       }
@@ -73,9 +84,7 @@ export default function Hero() {
               className="mt-7 max-w-[52ch] mx-auto text-[var(--color-fg-soft)] leading-[1.5] opacity-0 animate-[fade_900ms_var(--ease)_750ms_forwards]"
               style={{ fontSize: 'clamp(14px,1.15vw,17px)' }}
             >
-              I build cloud infrastructure that doesn&apos;t wake you up at 3 AM —
-              shipping observable, automated, SOC-compliant systems on{' '}
-              <strong className="text-[var(--color-fg)] font-medium">AWS &amp; Azure</strong>.
+              Architecting cloud infrastructure that scales without the surprises.
             </p>
 
             <div className="mt-8 flex gap-3 flex-wrap justify-center opacity-0 animate-[fade_900ms_var(--ease)_900ms_forwards]">

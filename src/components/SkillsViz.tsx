@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import SkillSphere, { type SkillNode } from './ui/SkillSphere'
 import { getIcon } from './ui/SkillIcons'
 
@@ -15,53 +15,81 @@ const CATEGORY_COLORS: Record<string, string> = {
   'Data & storage': '#818cf8',
 }
 
-interface Props {
-  nodes: SkillNode[]
-  categories: string[]
-}
+interface Props { nodes: SkillNode[]; categories: string[] }
 
 export default function SkillsViz({ nodes, categories }: Props) {
   const [hovered, setHovered] = useState<SkillNode | null>(null)
-  const [selected, setSelected] = useState<SkillNode | null>(null)
+  const [selected, setSelected] = useState<SkillNode | null>(nodes[0] ?? null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const autoPausedRef = useRef(false)
+  const autoIdxRef = useRef(0)
+
+  // Auto-cycle through all nodes
+  useEffect(() => {
+    const tick = setInterval(() => {
+      if (autoPausedRef.current) return
+      autoIdxRef.current = (autoIdxRef.current + 1) % nodes.length
+      setSelected(nodes[autoIdxRef.current])
+      setSelectedCategory(null)
+    }, 2200)
+    return () => clearInterval(tick)
+  }, [nodes])
+
+  const handleHover = useCallback((node: SkillNode | null) => {
+    setHovered(node)
+    if (node) autoPausedRef.current = true
+    else autoPausedRef.current = false
+  }, [])
 
   const handleNodeClick = useCallback((node: SkillNode | null) => {
     if (node) {
+      autoPausedRef.current = true
       setSelected(prev => prev?.name === node.name ? null : node)
       setSelectedCategory(null)
     } else {
       setSelected(null)
       setSelectedCategory(null)
+      autoPausedRef.current = false
     }
   }, [])
 
   const handleCategoryClick = (cat: string) => {
-    setSelectedCategory(prev => prev === cat ? null : cat)
+    const isDeselect = selectedCategory === cat
+    setSelectedCategory(isDeselect ? null : cat)
     setSelected(null)
+    autoPausedRef.current = !isDeselect
   }
 
-  const display = selected ?? hovered
+  const display = hovered ?? selected
   const Icon = display ? getIcon(display.name) : null
 
   return (
     <div>
-      <div className="flex gap-10 items-center max-[768px]:flex-col-reverse">
+      {/* Sphere + info overlay */}
+      <div className="relative h-[500px] max-[600px]:h-[420px]">
+        <SkillSphere
+          nodes={nodes}
+          onHover={handleHover}
+          onNodeClick={handleNodeClick}
+          selectedNode={selected}
+          selectedCategory={selectedCategory}
+        />
 
-        {/* Info panel — LEFT */}
-        <div className="w-[260px] flex-shrink-0 flex flex-col justify-center min-h-[260px] max-[768px]:w-full max-[768px]:min-h-[100px]">
+        {/* Info panel — absolute left overlay */}
+        <div className="absolute left-0 top-0 h-full w-[260px] flex flex-col justify-center pointer-events-none max-[600px]:w-full max-[600px]:bottom-0 max-[600px]:top-auto max-[600px]:h-auto max-[600px]:pb-4">
           {display ? (
             <div className="flex flex-col">
-              <span className="font-[var(--font-mono-loaded,var(--font-mono))] text-[11px] text-[var(--color-fg-faint)] uppercase tracking-[0.1em] mb-3">
+              <span className="font-[var(--font-mono-loaded,var(--font-mono))] text-[11px] text-[var(--color-fg-faint)] uppercase tracking-[0.1em] mb-2">
                 {display.category}
               </span>
               <span
-                className="font-[var(--font-display-loaded,var(--font-display))] font-medium tracking-[-0.03em] leading-none text-[var(--color-fg)] mb-8"
-                style={{ fontSize: 'clamp(22px,2.4vw,34px)' }}
+                className="font-[var(--font-display-loaded,var(--font-display))] font-medium tracking-[-0.03em] leading-none text-[var(--color-fg)] mb-5"
+                style={{ fontSize: 'clamp(18px,2vw,30px)' }}
               >
                 {display.name}
               </span>
               {Icon && (
-                <div className="w-[80px] h-[80px] text-[var(--color-fg-faint)]">
+                <div className="w-[56px] h-[56px] text-[var(--color-fg-faint)]">
                   <Icon className="w-full h-full" />
                 </div>
               )}
@@ -73,21 +101,14 @@ export default function SkillsViz({ nodes, categories }: Props) {
           )}
         </div>
 
-        {/* Sphere — RIGHT */}
-        <div className="flex-1 min-w-0">
-          <SkillSphere
-            nodes={nodes}
-            onHover={setHovered}
-            onNodeClick={handleNodeClick}
-            selectedNode={selected}
-            selectedCategory={selectedCategory}
-          />
-        </div>
-
+        {/* Hint — top right */}
+        <span className="absolute top-0 right-0 font-[var(--font-mono-loaded,var(--font-mono))] text-[11px] text-[var(--color-fg-faint)] tracking-[0.04em] pointer-events-none max-[600px]:hidden">
+          drag · hover · explore
+        </span>
       </div>
 
       {/* Category legend */}
-      <div className="flex flex-wrap gap-x-6 gap-y-3 mt-6 pl-0">
+      <div className="flex flex-wrap gap-x-5 gap-y-3 mt-4">
         {categories.map(cat => (
           <button
             key={cat}
@@ -96,10 +117,7 @@ export default function SkillsViz({ nodes, categories }: Props) {
               selectedCategory && selectedCategory !== cat ? 'opacity-25' : 'opacity-100'
             }`}
           >
-            <span
-              className="w-2 h-2 rounded-full flex-shrink-0"
-              style={{ background: CATEGORY_COLORS[cat] ?? '#888' }}
-            />
+            <span className="w-[7px] h-[7px] rounded-full flex-shrink-0" style={{ background: CATEGORY_COLORS[cat] ?? '#888' }} />
             {cat}
           </button>
         ))}

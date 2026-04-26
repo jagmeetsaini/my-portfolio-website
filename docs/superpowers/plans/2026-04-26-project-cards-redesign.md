@@ -1,3 +1,25 @@
+# Project Cards Redesign Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Replace list-row project layout with a card grid featuring custom SVG illustrations, bottom-to-top hover fill, and a floating/rotating illustration on hover — applied to both the homepage Projects section and the All Projects page.
+
+**Architecture:** Create a single `ProjectCard` client component that owns all card markup, illustration SVGs, and hover behaviour. Both `Projects.tsx` (homepage) and `src/app/projects/page.tsx` import it and render a responsive grid. Pure CSS transitions — no new dependencies.
+
+**Tech Stack:** Next.js 16 (static export), Tailwind CSS v4, CSS custom properties for theming, `currentColor` SVG technique for dark-mode-aware illustrations.
+
+---
+
+### Task 1: Create `ProjectCard.tsx`
+
+**Files:**
+- Create: `src/components/ui/ProjectCard.tsx`
+
+- [ ] **Step 1: Create the file with full implementation**
+
+Create `src/components/ui/ProjectCard.tsx` with the following content:
+
+```tsx
 'use client'
 
 type Project = {
@@ -93,7 +115,7 @@ export default function ProjectCard({ proj, idx }: { proj: Project; idx: number 
             {String(idx + 1).padStart(2, '0')}
           </span>
           <div className="w-[34px] h-[34px] rounded-full border border-[var(--color-line)] flex items-center justify-center group-hover:bg-[var(--color-bg)] group-hover:border-[var(--color-bg)] transition-colors duration-[350ms]">
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" className="group-hover:-rotate-45 transition-transform duration-[350ms] ease-[cubic-bezier(0.23,1,0.32,1)]">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
               <path
                 d="M2 12L12 2M12 2H5M12 2V9"
                 stroke="currentColor"
@@ -138,3 +160,189 @@ export default function ProjectCard({ proj, idx }: { proj: Project; idx: number 
     </li>
   )
 }
+```
+
+- [ ] **Step 2: Verify file exists**
+
+```bash
+ls src/components/ui/ProjectCard.tsx
+```
+
+Expected: file listed with no error.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add src/components/ui/ProjectCard.tsx
+git commit -m "feat: add ProjectCard component with SVG illustrations and hover effects"
+```
+
+---
+
+### Task 2: Update `Projects.tsx` homepage section
+
+**Files:**
+- Modify: `src/components/Projects.tsx`
+
+- [ ] **Step 1: Replace the file contents**
+
+Replace the full contents of `src/components/Projects.tsx` with:
+
+```tsx
+import { getFeaturedProjects } from '@/lib/projects'
+import RevealOnScroll from './ui/RevealOnScroll'
+import ProjectCard from './ui/ProjectCard'
+
+export default function Projects() {
+  const projects = getFeaturedProjects()
+
+  return (
+    <section className="py-[clamp(100px,14vh,180px)]" id="projects">
+      <div className="max-w-[1440px] mx-auto px-[clamp(20px,5vw,80px)]">
+        <RevealOnScroll>
+          <div className="flex items-baseline justify-between gap-10 mb-16 flex-wrap">
+            <div>
+              <span className="font-[var(--font-mono-loaded,var(--font-mono))] text-[11px] text-[var(--color-fg-faint)] uppercase tracking-[0.1em] mb-3.5 block">
+                03 / projects
+              </span>
+              <h2
+                className="font-[var(--font-display-loaded,var(--font-display))] font-medium tracking-[-0.035em] leading-none max-w-[16ch]"
+                style={{ fontSize: 'clamp(36px,5.5vw,72px)' }}
+              >
+                Things I&apos;ve shipped.
+              </h2>
+            </div>
+            <a
+              href="/projects"
+              className="font-[var(--font-mono-loaded,var(--font-mono))] text-[12px] text-[var(--color-fg-muted)] tracking-[0.04em] underline underline-offset-4 hover:text-[var(--color-fg)] transition-colors duration-[200ms]"
+            >
+              all projects →
+            </a>
+          </div>
+        </RevealOnScroll>
+
+        <RevealOnScroll delay={80}>
+          <ol className="grid grid-cols-3 gap-4 list-none p-0 m-0 max-[900px]:grid-cols-2 max-[600px]:grid-cols-1">
+            {projects.map((proj, idx) => (
+              <ProjectCard key={proj.slug} proj={proj} idx={idx} />
+            ))}
+          </ol>
+        </RevealOnScroll>
+      </div>
+    </section>
+  )
+}
+```
+
+- [ ] **Step 2: Start dev server and verify homepage projects section**
+
+```bash
+npm run dev
+```
+
+Open http://localhost:3000 and scroll to the Projects section. Verify:
+- Cards render in 3-column grid
+- Each card shows: index number, arrow button, SVG illustration, title, description, tags
+- Hover a card: fill wipes bottom-to-top, text turns to `var(--color-bg)`, SVG floats up and rotates left ~5°
+- Resize browser to <900px: grid becomes 2 columns
+- Resize to <600px: grid becomes 1 column
+- Works in dark mode (toggle via the moon icon in nav)
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add src/components/Projects.tsx
+git commit -m "feat: replace project list with card grid on homepage"
+```
+
+---
+
+### Task 3: Update All Projects page
+
+**Files:**
+- Modify: `src/app/projects/page.tsx`
+
+- [ ] **Step 1: Replace the file contents**
+
+Replace the full contents of `src/app/projects/page.tsx` with:
+
+```tsx
+import { getAllProjects } from '@/lib/projects'
+import Nav from '@/components/Nav'
+import Footer from '@/components/Footer'
+import RevealOnScroll from '@/components/ui/RevealOnScroll'
+import ProjectCard from '@/components/ui/ProjectCard'
+
+export default function ProjectsPage() {
+  const projects = getAllProjects()
+
+  return (
+    <>
+      <Nav />
+      <main className="pt-[120px] pb-[80px]">
+        <div className="max-w-[1440px] mx-auto px-[clamp(20px,5vw,80px)]">
+          <RevealOnScroll>
+            <div className="mb-16">
+              <span className="font-[var(--font-mono-loaded,var(--font-mono))] text-[11px] text-[var(--color-fg-faint)] uppercase tracking-[0.1em] mb-3.5 block">
+                all projects
+              </span>
+              <h1
+                className="font-[var(--font-display-loaded,var(--font-display))] font-medium tracking-[-0.035em] leading-none"
+                style={{ fontSize: 'clamp(36px,5.5vw,72px)' }}
+              >
+                Everything I&apos;ve shipped.
+              </h1>
+            </div>
+          </RevealOnScroll>
+
+          <RevealOnScroll delay={80}>
+            <ol className="grid grid-cols-3 gap-4 list-none p-0 m-0 max-[900px]:grid-cols-2 max-[600px]:grid-cols-1">
+              {projects.map((proj, idx) => (
+                <ProjectCard key={proj.slug} proj={proj} idx={idx} />
+              ))}
+            </ol>
+          </RevealOnScroll>
+        </div>
+      </main>
+      <Footer />
+    </>
+  )
+}
+```
+
+- [ ] **Step 2: Verify all-projects page**
+
+With dev server still running, open http://localhost:3000/projects. Verify:
+- Same card grid layout as homepage
+- All 3 projects render (not just featured)
+- Hover animations work identically
+- Responsive breakpoints apply
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add src/app/projects/page.tsx
+git commit -m "feat: replace project list with card grid on all-projects page"
+```
+
+---
+
+### Task 4: Build verification
+
+**Files:** none
+
+- [ ] **Step 1: Run production build**
+
+```bash
+npm run build
+```
+
+Expected: build completes with no errors. Output goes to `/out`.
+
+- [ ] **Step 2: Check for TypeScript/lint errors**
+
+```bash
+npm run lint
+```
+
+Expected: no errors.

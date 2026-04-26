@@ -1,6 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
+import { useTheme } from 'next-themes'
 import React, { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 
@@ -8,6 +9,12 @@ type DottedSurfaceProps = Omit<React.ComponentProps<'div'>, 'ref'>
 
 export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const { resolvedTheme } = useTheme()
+  const themeRef = useRef(resolvedTheme)
+
+  useEffect(() => {
+    themeRef.current = resolvedTheme
+  }, [resolvedTheme])
 
   useEffect(() => {
     const container = containerRef.current
@@ -40,7 +47,7 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
           0,
           iy * SEPARATION - (AMOUNTY * SEPARATION) / 2,
         )
-        colors.push(0.3, 0.3, 0.3)
+        colors.push(0.1, 0.1, 0.1)
       }
     }
 
@@ -82,6 +89,7 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
       animationId = requestAnimationFrame(animate)
       const pos = geometry.attributes.position.array as Float32Array
       const col = geometry.attributes.color.array as Float32Array
+      const isDark = themeRef.current === 'dark'
       let i = 0
 
       for (let ix = 0; ix < AMOUNTX; ix++) {
@@ -100,9 +108,14 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
 
           pos[idx + 1] = wave + repulsion
 
-          // Hue cycles with the same wave phase so color flows with the wave
-          const hue = ((ix * 0.04 + iy * 0.025 + count * 0.6) % 1 + 1) % 1
-          color.setHSL(hue, 1.0, 0.5)
+          if (isDark) {
+            const hue = ((ix * 0.04 + iy * 0.025 + count * 0.6) % 1 + 1) % 1
+            color.setHSL(hue, 1.0, 0.5)
+          } else {
+            const lightness = 0.08 + 0.06 * ((Math.sin((ix + count) * 0.3) + Math.sin((iy + count) * 0.5)) / 4 + 0.5)
+            color.setHSL(0, 0, lightness)
+          }
+
           col[idx]     = color.r
           col[idx + 1] = color.g
           col[idx + 2] = color.b

@@ -11,21 +11,21 @@ export default function Experience() {
     <section className="py-[clamp(100px,14vh,180px)]" id="experience">
       <div className="max-w-[1440px] mx-auto px-[clamp(20px,5vw,80px)]">
         <RevealOnScroll>
-          <div className="flex items-baseline justify-between gap-10 mb-16 flex-wrap">
-            <div>
-              <span className="font-[var(--font-mono-loaded,var(--font-mono))] text-[11px] text-[var(--color-fg-faint)] uppercase tracking-[0.1em] mb-3.5 block">
+          <div className="mb-16">
+            <div className="flex items-center justify-between mb-3.5">
+              <span className="font-[var(--font-mono-loaded,var(--font-mono))] text-[11px] text-[var(--color-fg-faint)] uppercase tracking-[0.1em]">
                 02 / experience
               </span>
-              <h2
-                className="font-[var(--font-display-loaded,var(--font-display))] font-medium tracking-[-0.035em] leading-none max-w-[16ch]"
-                style={{ fontSize: 'clamp(36px,5.5vw,72px)' }}
-              >
-                Four years making production behave.
-              </h2>
+              <span className="font-[var(--font-mono-loaded,var(--font-mono))] text-[12px] text-[var(--color-fg-muted)] tracking-[0.04em]">
+                2021 → now
+              </span>
             </div>
-            <span className="font-[var(--font-mono-loaded,var(--font-mono))] text-[12px] text-[var(--color-fg-muted)] tracking-[0.04em]">
-              2021 → now
-            </span>
+            <h2
+              className="font-[var(--font-display-loaded,var(--font-display))] font-medium tracking-[-0.035em] leading-none"
+              style={{ fontSize: 'clamp(36px,5.5vw,72px)' }}
+            >
+              Four years making production behave.
+            </h2>
           </div>
         </RevealOnScroll>
 

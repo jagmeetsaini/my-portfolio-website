@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
-import Cursor from '@/components/ui/Cursor'
 import { ThemeProvider } from '@/components/ui/ThemeProvider'
 import './globals.css'
 
@@ -28,7 +27,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ThemeProvider>
           <div className="grain" aria-hidden />
-          <Cursor />
           {children}
         </ThemeProvider>
       </body>

@@ -32,6 +32,8 @@ All site content lives in `src/content/`:
 
 `src/lib/projects.ts` reads MDX files at build time using `fs` + `gray-matter`. This module is **Node.js only** (uses `fs`) — do not import it in client components. The dynamic route `src/app/projects/[slug]/page.tsx` uses `generateStaticParams()` to pre-render all project pages.
 
+**MDX gotcha:** `gray-matter` returns the file body as a raw markdown string. Project detail pages render it via `dangerouslySetInnerHTML` — the `@mdx-js` packages are installed but do **not** process project bodies. Do not use JSX components inside `.mdx` files; write standard Markdown (or HTML) only.
+
 ### Routing
 
 - `/` — single-page portfolio with all sections (Hero, About, Experience, Projects, Skills, Contact)
@@ -56,8 +58,17 @@ Any component using Framer Motion, `next-themes`, or browser APIs must be a Clie
 - `RevealOnScroll.tsx` — Framer Motion scroll-triggered entrance animation
 - `MagneticButton.tsx` — cursor-attracted button using Framer Motion
 - `Cursor.tsx` — custom cursor implementation
+- `DottedSurface.tsx` — Three.js animated particle grid used as the Hero section background; the `three` dependency exists solely for this component
 
-These wrap Framer Motion and are used throughout section components.
+Use `cn()` from `src/lib/utils.ts` (a `clsx` wrapper) for conditional Tailwind classes throughout the codebase.
+
+### Path alias
+
+`@/*` resolves to `src/*` (configured in `tsconfig.json`). Use `@/` for all internal imports.
+
+### Content with embedded HTML
+
+`site.bio` in `src/content/site.ts` contains HTML string fragments (e.g. `<strong>`, `<a>` tags) rendered via `dangerouslySetInnerHTML` in `About.tsx`. When editing bio copy, write valid HTML, not JSX.
 
 ## Deployment
 
