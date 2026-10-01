@@ -27,6 +27,10 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
     const REPULSION_RADIUS   = 350
     const REPULSION_STRENGTH = 180
 
+    // Dark-mode rainbow drift. Full colour cycle ≈ 1 / (HUE_SPEED * 0.02 * 60) seconds at 60fps.
+    // 0.6 ≈ 1.4s (original), 0.1 ≈ 8s, 0.05 ≈ 17s, 0.02 ≈ 42s. Doesn't affect wave motion.
+    const HUE_SPEED = 0.1
+
     const scene = new THREE.Scene()
 
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 10000)
@@ -109,7 +113,7 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
           pos[idx + 1] = wave + repulsion
 
           if (isDark) {
-            const hue = ((ix * 0.04 + iy * 0.025 + count * 0.6) % 1 + 1) % 1
+            const hue = ((ix * 0.04 + iy * 0.025 + count * HUE_SPEED) % 1 + 1) % 1
             color.setHSL(hue, 1.0, 0.5)
           } else {
             const lightness = 0.08 + 0.06 * ((Math.sin((ix + count) * 0.3) + Math.sin((iy + count) * 0.5)) / 4 + 0.5)

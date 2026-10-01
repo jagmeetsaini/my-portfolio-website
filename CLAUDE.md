@@ -32,7 +32,7 @@ All site content lives in `src/content/`:
 
 `src/lib/projects.ts` reads MDX files at build time using `fs` + `gray-matter`. This module is **Node.js only** (uses `fs`) — do not import it in client components. The dynamic route `src/app/projects/[slug]/page.tsx` uses `generateStaticParams()` to pre-render all project pages.
 
-**MDX gotcha:** `gray-matter` returns the file body as a raw markdown string. Project detail pages render it via `dangerouslySetInnerHTML` — the `@mdx-js` packages are installed but do **not** process project bodies. Do not use JSX components inside `.mdx` files; write standard Markdown (or HTML) only.
+**MDX gotcha:** `gray-matter` returns the file body as a raw string, and `src/app/projects/[slug]/page.tsx` injects it **as-is** via `dangerouslySetInnerHTML`. Nothing converts Markdown to HTML. The `@mdx-js`/`@next/mdx` packages only handle `.mdx` files used as pages (`pageExtensions`), not project bodies. So Markdown syntax (`##`, `-` lists) in project files is not rendered as formatting; only raw HTML is. JSX components won't work either. Adding a Markdown→HTML step (e.g. in `getAllProjects()`) would require a new dependency.
 
 ### Routing
 
@@ -58,7 +58,17 @@ Any component using Framer Motion, `next-themes`, or browser APIs must be a Clie
 - `RevealOnScroll.tsx` — Framer Motion scroll-triggered entrance animation
 - `MagneticButton.tsx` — cursor-attracted button using Framer Motion
 - `Cursor.tsx` — custom cursor implementation
-- `DottedSurface.tsx` — Three.js animated particle grid used as the Hero section background; the `three` dependency exists solely for this component
+- `dotted-surface.tsx` (exports `DottedSurface`) — Three.js animated particle grid used as the Hero section background
+
+`three` is used only by `dotted-surface.tsx`.
+
+### Skills rack
+
+`Skills.tsx` (server) passes `skillGroups` from `src/content/skills.ts` to `SkillsRack.tsx` (client), which draws each group as a server-rack unit and each pill as a drive bay. Unit height is `ceil(pills / 4)` U. Adding a group or pill needs no component changes; `slug` and `blurb` are optional. Per-unit LED colours come from the `--spec-*` tokens by index (dark mode only). Light vs dark LED styling lives in the `.rack-*` classes at the bottom of `globals.css`, driven by `html.dark`, so the component never reads the theme in JS.
+
+### Design docs
+
+`docs/superpowers/specs/` and `docs/superpowers/plans/` hold dated design specs and implementation plans for past redesigns (the old skills constellation, project cards). The constellation docs are historical; it has been replaced by the rack. Check them before changing those features.
 
 Use `cn()` from `src/lib/utils.ts` (a `clsx` wrapper) for conditional Tailwind classes throughout the codebase.
 

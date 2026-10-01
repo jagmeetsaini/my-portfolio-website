@@ -92,7 +92,7 @@ export default function Hero() {
                 href="#contact"
                 className="inline-flex items-center gap-2.5 px-[22px] py-[14px] font-[var(--font-mono-loaded,var(--font-mono))] text-[13px] font-medium rounded-full border border-[var(--color-fg)] bg-[var(--color-fg)] text-[var(--color-bg)] transition-transform duration-[200ms] hover:-translate-y-0.5"
               >
-                Start a project
+                Let&apos;s talk
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M3 11L11 3M11 3H5M11 3V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
