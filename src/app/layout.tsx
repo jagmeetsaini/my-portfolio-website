@@ -16,10 +16,46 @@ const jetbrainsMono = JetBrains_Mono({
   display: 'swap',
 })
 
+const SITE_URL = 'https://jagmeet.cloud'
+const SITE_NAME = 'Jagmeet Singh Saini'
+const TITLE = 'Jagmeet Singh Saini — Cloud & SRE Engineer'
+const DESCRIPTION =
+  'Portfolio of Jagmeet Singh Saini, a cloud, SRE & DevOps engineer building reliable infrastructure on AWS and Azure.'
+
 export const metadata: Metadata = {
-  title: 'Jagmeet Singh Saini — Cloud & SRE Engineer',
-  description: 'Portfolio of Jagmeet Singh Saini — cloud, SRE & DevOps engineer.',
+  metadataBase: new URL(SITE_URL),
+  title: { default: TITLE, template: `%s | ${SITE_NAME}` },
+  description: DESCRIPTION,
+  keywords: [
+    'Jagmeet Singh Saini',
+    'SRE engineer',
+    'site reliability engineer',
+    'cloud engineer',
+    'DevOps engineer',
+    'AWS',
+    'Azure',
+    'Terraform',
+    'Kubernetes',
+    'portfolio',
+  ],
+  authors: [{ name: SITE_NAME }],
+  creator: SITE_NAME,
   icons: { icon: '/logo.svg', shortcut: '/logo.svg' },
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE,
+    description: DESCRIPTION,
+  },
+  robots: { index: true, follow: true },
+  alternates: { canonical: SITE_URL },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
