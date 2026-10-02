@@ -9,9 +9,9 @@ export const site = {
   pitchLong:
     'Four years shipping observable, automated, SOC-compliant systems on AWS & Azure — turning on-call chaos into dashboards, runbooks, and quiet nights.',
   bio: [
-    "I'm a <strong>Site Reliability Engineer</strong> currently building cloud infra at <strong>Enpass</strong>. Before that, I spent three years at <strong>LeadSquared</strong> automating the unsexy parts of DevOps — the 3 AM alerts, the fragile deploys, the \"it works on my region\" bugs.",
-    'My favourite problems live at the intersection of <strong>infrastructure, automation and compliance</strong>. Think multi-region DR plans, SOC certifications, Terraform modules you can actually read, and observability stacks that answer the question before someone asks it.',
-    "Outside work I take on cloud audits, IaC refactors, and CI/CD rescue missions. If your infra spooks you, <a href='#contact' style='text-decoration:underline;text-underline-offset:3px'>let's chat</a>.",
+    "I'm a <strong>Site Reliability Engineer</strong> building cloud infra at <strong>Enpass</strong>. Before that, three years at <strong>LeadSquared</strong> automating the unglamorous parts of DevOps: 3 AM alerts, fragile deploys, \"works in my region\" bugs.",
+    'I like the overlap of <strong>infrastructure, automation and compliance</strong>: multi-region DR, SOC certifications, Terraform you can actually read, and observability that answers the question before anyone asks it.',
+    "Outside work: cloud audits, IaC refactors, CI/CD rescue missions. If your infra spooks you, <a href='#contact'>let's chat</a>.",
   ],
   facts: [
     { key: 'Role', value: 'SRE @ Enpass' },

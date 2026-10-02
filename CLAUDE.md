@@ -40,6 +40,12 @@ All site content lives in `src/content/`:
 - `/projects` — project listing
 - `/projects/[slug]` — individual project detail page (MDX content rendered via `dangerouslySetInnerHTML`)
 
+### SEO & analytics
+
+- `src/app/sitemap.ts` and `src/app/robots.ts` are metadata routes. Each **must** export `dynamic = 'force-static'`, because Next 16 won't emit `sitemap.xml`/`robots.txt` under `output: 'export'` without it. The sitemap gets project URLs from `getAllProjects()`, so new MDX files show up in it automatically.
+- Site-wide metadata (title template `%s | <name>`, OpenGraph, Twitter, canonical) lives in `src/app/layout.tsx`. The base URL `https://jagmeet.cloud` is hardcoded separately in `layout.tsx`, `sitemap.ts`, and `robots.ts`. If the domain changes, update all three. No `og:image` is set yet.
+- `GoogleAnalytics.tsx` loads gtag through `next/script` and renders `null` when `NEXT_PUBLIC_GA_MEASUREMENT_ID` is empty. `.env.production` is committed with the variable left blank as a placeholder. The real ID is injected only by the prod CI build (see Deployment), so analytics never runs locally or on staging.
+
 ### Styling
 
 Tailwind CSS v4 with CSS custom properties for theming. Design tokens (`--color-fg`, `--color-fg-muted`, `--color-line`, etc.) are defined in `globals.css` and used throughout via inline Tailwind classes. Fonts are referenced via CSS variables (`--font-display`, `--font-mono`).
@@ -58,6 +64,7 @@ Any component using Framer Motion, `next-themes`, or browser APIs must be a Clie
 - `RevealOnScroll.tsx` — Framer Motion scroll-triggered entrance animation
 - `MagneticButton.tsx` — cursor-attracted button using Framer Motion
 - `Cursor.tsx` — custom cursor implementation
+- `ProjectCard.tsx` — project card used by the homepage and `/projects` listing
 - `dotted-surface.tsx` (exports `DottedSurface`) — Three.js animated particle grid used as the Hero section background
 
 `three` is used only by `dotted-surface.tsx`.
