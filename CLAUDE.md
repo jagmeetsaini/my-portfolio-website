@@ -83,7 +83,7 @@ Use `cn()` from `src/lib/utils.ts` (a `clsx` wrapper) for conditional Tailwind c
 ## Deployment
 
 GitHub Actions (`.github/workflows/deploy.yml`) deploys on **manual trigger only** (`workflow_dispatch` — pushing to `main` or `development` does *not* auto-deploy; run it from the Actions tab):
-- `main` → production S3 bucket + CloudFront invalidation (`/*`)
-- `development` → staging S3 bucket + CloudFront invalidation (`/*`)
+- `main` → production S3 bucket + CloudFront invalidation (`/*`); build gets `NEXT_PUBLIC_GA_MEASUREMENT_ID` from the `Production` environment's `NEXT_PUBLIC_GA_MEASUREMENT_ID` variable (GA4 only runs in prod)
+- `development` → staging S3 bucket + CloudFront invalidation (`/*`); no GA4 var, so analytics stays off there
 
 HTML/JSON files are served with `no-cache`; all other assets get `immutable` long-term cache headers. Auth uses OIDC (no stored access keys). Config comes from repo/environment variables (`AWS_REGION`, `S3_BUCKET`, `CLOUDFRONT_DIST_ID`) plus the `AWS_OIDC_ROLE_ARN` secret, scoped per GitHub Environment (`Development` / `Production`).
