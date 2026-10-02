@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getAllProjects, getProjectBySlug } from '@/lib/projects'
 import Nav from '@/components/Nav'
@@ -18,7 +19,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
       <main className="pt-[120px] pb-[80px]">
         <div className="max-w-[800px] mx-auto px-[clamp(20px,5vw,80px)]">
           {/* Back */}
-          <a
+          <Link
             href="/projects"
             className="inline-flex items-center gap-2 font-[var(--font-mono-loaded,var(--font-mono))] text-[12px] text-[var(--color-fg-muted)] uppercase tracking-widest hover:text-[var(--color-fg)] transition-colors duration-[200ms] mb-12"
           >
@@ -26,7 +27,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
               <path d="M9 6H3M3 6l3-3M3 6l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             All projects
-          </a>
+          </Link>
 
           {/* Header */}
           <div className="mb-12">

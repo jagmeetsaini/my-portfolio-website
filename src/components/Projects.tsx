@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { getFeaturedProjects } from '@/lib/projects'
 import RevealOnScroll from './ui/RevealOnScroll'
 import ProjectCard from './ui/ProjectCard'
@@ -37,13 +38,13 @@ export default function Projects() {
 
         <RevealOnScroll delay={120}>
           <div className="flex items-center justify-between mt-8">
-            <span className="font-[var(--font-mono-loaded,var(--font-mono))] text-[11px] text-[var(--color-fg-faint)] tracking-[0.04em]">// explore more of my projects</span>
-            <a
+            <span className="font-[var(--font-mono-loaded,var(--font-mono))] text-[11px] text-[var(--color-fg-faint)] tracking-[0.04em]">{'// explore more of my projects'}</span>
+            <Link
               href="/projects"
               className="font-[var(--font-mono-loaded,var(--font-mono))] text-[13px] tracking-[0.04em] border border-[var(--color-fg)] rounded-full px-6 py-3 hover:bg-[var(--color-fg)] hover:text-[var(--color-bg)] transition-colors duration-[300ms] shrink-0"
             >
               See all projects ↗
-            </a>
+            </Link>
           </div>
         </RevealOnScroll>
       </div>
